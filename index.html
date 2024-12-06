@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop Khata</title>
+  <style>
+    /* General Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f3f3;
+    }
+
+    /* Header */
+    header {
+      background-color: #ff5722;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    /* Main Container */
+    .container {
+      padding: 20px;
+    }
+
+    /* Button Styles */
+    .btn {
+      background-color: #ff5722;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .btn:hover {
+      background-color: #e64a19;
+    }
+
+    /* Customer List */
+    .customer-list {
+      margin-top: 20px;
+    }
+    .customer-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 15px;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .customer-name {
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .customer-total {
+      color: #ff5722;
+      font-size: 14px;
+    }
+
+    /* Add Customer Section */
+    .add-customer {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #ff5722;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 25px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+    }
+
+    /* Transaction View */
+    .customer-details {
+      margin-top: 20px;
+    }
+    .transaction {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 10px;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .transaction-item {
+      font-size: 14px;
+    }
+    .transaction-price {
+      color: #ff5722;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    Shop Khata
+  </header>
+
+  <div class="container">
+    <!-- Customer List -->
+    <div class="customer-list" id="customer-list"></div>
+
+    <!-- Add Customer Button -->
+    <button class="add-customer" onclick="addCustomer()">+</button>
+    <button class="btn" style="position: fixed; bottom: 80px; right: 20px;" onclick="openSettings()">Settings</button>
+  </div>
+
+  <script>
+    const customers = JSON.parse(localStorage.getItem('customers')) || [];
+    const items = JSON.parse(localStorage.getItem('items')) || [];
+
+    function renderCustomers() {
+      const customerList = document.getElementById('customer-list');
+      customerList.innerHTML = '';
+      customers.forEach((customer, index) => {
+        const customerCard = document.createElement('div');
+        customerCard.className = 'customer-card';
+
+        const customerName = document.createElement('div');
+        customerName.className = 'customer-name';
+        customerName.textContent = customer.name;
+
+        const customerTotal = document.createElement('div');
+        customerTotal.className = 'customer-total';
+        customerTotal.textContent = `Total: Rs. ${calculateTotal(customer.transactions)}`;
+
+        customerCard.appendChild(customerName);
+        customerCard.appendChild(customerTotal);
+
+        customerCard.addEventListener('click', () => viewCustomer(index));
+        customerList.appendChild(customerCard);
+      });
+    }
+
+    function addCustomer() {
+      const name = prompt('Enter Customer Name:');
+      if (name) {
+        customers.push({ name, transactions: [] });
+        saveCustomers();
+        renderCustomers();
+      }
+    }
+
+    function viewCustomer(index) {
+      const customer = customers[index];
+      const customerList = document.getElementById('customer-list');
+      customerList.innerHTML = `<h3>${customer.name}</h3>`;
+
+      customer.transactions.forEach((transaction) => {
+        const transactionCard = document.createElement('div');
+        transactionCard.className = 'transaction';
+
+        const transactionItem = document.createElement('div');
+        transactionItem.className = 'transaction-item';
+        transactionItem.textContent = `${transaction.item} - ${transaction.quantity} pcs`;
+
+        const transactionPrice = document.createElement('div');
+        transactionPrice.className = 'transaction-price';
+        transactionPrice.textContent = `Rs. ${transaction.price}`;
+
+        transactionCard.appendChild(transactionItem);
+        transactionCard.appendChild(transactionPrice);
+        customerList.appendChild(transactionCard);
+      });
+
+      const addTransactionButton = document.createElement('button');
+      addTransactionButton.className = 'btn';
+      addTransactionButton.textContent = 'Add Transaction';
+      addTransactionButton.onclick = () => addTransaction(index);
+
+      const minusAmountButton = document.createElement('button');
+      minusAmountButton.className = 'btn';
+      minusAmountButton.style.backgroundColor = '#fbc02d';
+      minusAmountButton.textContent = 'Minus Amount';
+      minusAmountButton.onclick = () => minusAmount(index);
+
+      const backButton = document.createElement('button');
+      backButton.className = 'btn';
+      backButton.style.backgroundColor = '#757575';
+      backButton.textContent = 'Back';
+      backButton.onclick = renderCustomers;
+
+      customerList.appendChild(addTransactionButton);
+      customerList.appendChild(minusAmountButton);
+      customerList.appendChild(backButton);
+    }
+
+    function minusAmount(index) {
+      const amount = parseInt(prompt('Enter the amount to minus:'), 10);
+      if (amount > 0) {
+        const customer = customers[index];
+        customer.transactions.push({ item: 'Deduction', quantity: 1, price: -amount });
+        saveCustomers();
+        viewCustomer(index);
+      } else {
+        alert('Invalid amount!');
+      }
+    }
+
+    function addTransaction(index) {
+      const itemOptions = items.map((item, idx) => `${idx + 1}. ${item.name}`).join('\n');
+      const selectedItem = parseInt(prompt(`Select Item:\n${itemOptions}`), 10) - 1;
+      if (selectedItem >= 0 && selectedItem < items.length) {
+        const quantity = parseInt(prompt('Enter Quantity:'), 10);
+        if (quantity > 0) {
+          const price = items[selectedItem].price * quantity;
+          customers[index].transactions.push({ item: items[selectedItem].name, quantity, price });
+          saveCustomers();
+          viewCustomer(index);
+        }
+      } else {
+        alert('Invalid Selection!');
+      }
+    }
+
+    function saveCustomers() {
+      localStorage.setItem('customers', JSON.stringify(customers));
+    }
+
+    function calculateTotal(transactions) {
+      return transactions.reduce((total, transaction) => total + transaction.price, 0);
+    }
+
+    function openSettings() {
+      window.location.href = 'settings.html';
+    }
+
+    // Initialize
+    renderCustomers();
+  </script>
+</body>
+</html>
